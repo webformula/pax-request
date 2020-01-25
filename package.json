@@ -1,0 +1,30 @@
+{
+  "name": "pax-request",
+  "version": "0.0.0",
+  "description": "A node and browser compatible http requester, with jwt and health monitoring builtin",
+  "main": "index.js",
+  "scripts": {
+    "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webformula/pax-request.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/webformula/pax-request/issues"
+  },
+  "homepage": "https://github.com/webformula/pax-request#readme",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "karma": "^4.4.1",
+    "karma-chai": "^0.1.0",
+    "karma-child-process": "^1.0.3",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-mocha": "^1.3.0",
+    "mocha": "^7.0.0"
+  }
+}
