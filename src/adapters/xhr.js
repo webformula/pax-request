@@ -19,7 +19,7 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
   const config = arguments[0];
   let request = new XMLHttpRequest();
   request.open(method.toUpperCase(), buildUrl(baseUrl, url, true));
-  request.timeout = timeout;
+  request.timeout = timeout * 1000; // convert to ms
   request.responseType = responseType
 
   // headers

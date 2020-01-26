@@ -1,4 +1,4 @@
-import adapter from './adapters/xhr.js';
+import adapter from './adapters/adapter.js';
 
 class RequestInstance {
   constructor(config = {}) {
@@ -63,23 +63,28 @@ class RequestInstance {
   }
 
   headers(params = {}) {
-    this._config.headers = Object.assign({}, this._config.headers, params)
+    this._config.headers = Object.assign({}, this._config.headers, params);
+    return this;
   }
 
   urlParameters(params = {}) {
-    this._config.urlParameters = Object.assign({}, this._config.urlParameters, params)
+    this._config.urlParameters = Object.assign({}, this._config.urlParameters, params);
+    return this;
   }
 
   data(value) {
     this._config.data = value;
+    return this;
   }
 
   responseType(value) {
     this._config.responseType = value;
+    return this;
   }
 
   timeout(value) {
     this._config.timeout = value;
+    return this;
   }
 
   send() {
@@ -102,6 +107,9 @@ class RequestInstance {
 const defaultInstance = new RequestInstance();
 defaultInstance._default = true;
 export default defaultInstance;
+export {
+  defaultInstance as request
+}
 export function createInstance({ baseUrl, url, method }) {
   return new RequestInstance({ baseUrl, url, method });
 }

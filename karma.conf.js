@@ -3,7 +3,7 @@ module.exports = function(config) {
     frameworks: ['mocha', 'chai', 'child-process'],
     files: [
       { pattern: 'test/tests/**/*.js', type: 'module' },
-      { pattern: 'src/**/*.js', type: 'module'}
+      { pattern: 'dist/pax-request.js' }
     ],
     reporters: ['progress'],
     port: 9876,  // karma web server port
