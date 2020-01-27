@@ -50,6 +50,17 @@ describe('node', () => {
     expect(response.data).toEqual(data);
   });
 
+  it('params-to-json', async () => {
+    const data = { test: 'one' };
+    const response = await request
+      .post('params-to-json')
+      .urlParameters(data)
+      .send();
+
+    expect(response.status).toEqual(200);
+    expect(response.data).toEqual(data);
+  });
+
   it('timeout', async () => {
     function throws() {
       return request

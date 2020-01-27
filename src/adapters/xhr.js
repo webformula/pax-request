@@ -15,10 +15,10 @@ import {
   createError
 } from './utils.js';
 
-export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator } = {}) {
+export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator } = {}) {
   const config = arguments[0];
   let request = new XMLHttpRequest();
-  request.open(method.toUpperCase(), buildUrl(baseUrl, url, true));
+  request.open(method.toUpperCase(), buildUrl(baseUrl, url, urlParameters));
   request.timeout = timeout * 1000; // convert to ms
   request.responseType = responseType
 

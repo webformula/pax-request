@@ -20,11 +20,11 @@ import {
 
 const httpsRegex = /https:?/;
 
-export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator, maxContentLength = -1, responseEncoding } = {}) {
+export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator, maxContentLength = -1, responseEncoding } = {}) {
   const config = arguments[0];
 
   // url
-  const fullPath = buildUrl(baseUrl, url);
+  const fullPath = buildUrl(baseUrl, url, urlParameters);
   const parsed = urlNode.parse(fullPath);
   const protocol = parsed.protocol || 'http:';
   const isHttpsRequest = httpsRegex.test(protocol);

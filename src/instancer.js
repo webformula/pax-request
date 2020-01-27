@@ -1,8 +1,14 @@
 import adapter from './adapters/adapter.js';
+import JWTHandler from './services/JWTHandler.js';
 
 class RequestInstance {
   constructor(config = {}) {
     this._config = config;
+    this._configureJWT();
+  }
+
+  createInstance(config) {
+    return new RequestInstance(config);
   }
 
   set baseUrl(value) {
@@ -87,6 +93,12 @@ class RequestInstance {
     return this;
   }
 
+  unauth() {
+    if (this._config.jwtHandler) {
+      this._config.jwtHandler.unauth();
+    }
+  }
+
   send() {
     if (!this._config.method) throw Error('Must first call one of the method setters (get(), post(), ...) or create a new instance with a method');
     if (this._default) throw Error('cannot call send on the default instnace');
@@ -102,6 +114,11 @@ class RequestInstance {
     const config = Object.assign({}, this._config, { url, method });
     return new RequestInstance(config);
   }
+
+  _configureJWT() {
+    if (!this._config.jwt) return;
+    this._config.jwtHandler = new JWTHandler({ jwtConfig: this._config.jwt, baseUrl: this._config.baseUrl, adapter });
+  }
 }
 
 const defaultInstance = new RequestInstance();
@@ -109,7 +126,4 @@ defaultInstance._default = true;
 export default defaultInstance;
 export {
   defaultInstance as request
-}
-export function createInstance({ baseUrl, url, method }) {
-  return new RequestInstance({ baseUrl, url, method });
 }
