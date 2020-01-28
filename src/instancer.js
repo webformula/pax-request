@@ -4,7 +4,7 @@ import JWTHandler from './services/JWTHandler.js';
 class RequestInstance {
   constructor(config = {}) {
     this._config = config;
-    this._configureJWT();
+    if (this._config.jwt) this._config.jwtHandler = new JWTHandler(this._config.jwt, adapter);
   }
 
   createInstance(config) {
@@ -68,6 +68,26 @@ class RequestInstance {
     return this._instancer(url, 'HEAD');
   }
 
+  // used to authenticate user and provide a refresh token and access token
+  authenticateJWT() {
+    if (!this._config.jwtHandler) throw Error('JWT is not configured');
+    const instance = this._instancer(this._config.jwtHandler.authenticatePath, 'POST');
+    instance.baseUrl = this._config.jwtHandler.baseUrl;
+    instance._config.credentials = true;
+    instance._config.authentication = true;
+    return instance;
+  }
+
+  // used to authenticate user and provide a refresh token and access token
+  deauthenticateJWT() {
+    if (!this._config.jwtHandler) throw Error('JWT is not configured');
+    const instance = this._instancer(this._config.jwtHandler.deauthenticatePath, 'POST');
+    instance.baseUrl = this._config.jwtHandler.baseUrl;
+    instance._config.credentials = true;
+    instance._config.authentication = true;
+    return instance;
+  }
+
   headers(params = {}) {
     this._config.headers = Object.assign({}, this._config.headers, params);
     return this;
@@ -93,10 +113,19 @@ class RequestInstance {
     return this;
   }
 
-  unauth() {
-    if (this._config.jwtHandler) {
-      this._config.jwtHandler.unauth();
-    }
+  credentials(value = true) {
+    this._config.credentials = value;
+    return this;
+  }
+
+  async authorizeJWT() {
+    if (!this._config.jwtHandler) throw Error('no jwt configured');
+    return this._config.jwtHandler.authorizeJWT();
+  }
+
+  unAuthorizeJWT() {
+    if (!this._config.jwtHandler) throw Error('no jwt configured');
+    this._config.jwtHandler.unAuthorize();
   }
 
   send() {
@@ -113,11 +142,6 @@ class RequestInstance {
   _instancer(url, method) {
     const config = Object.assign({}, this._config, { url, method });
     return new RequestInstance(config);
-  }
-
-  _configureJWT() {
-    if (!this._config.jwt) return;
-    this._config.jwtHandler = new JWTHandler({ jwtConfig: this._config.jwt, baseUrl: this._config.baseUrl, adapter });
   }
 }
 

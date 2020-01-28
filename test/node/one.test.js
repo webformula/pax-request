@@ -1,4 +1,4 @@
-const server = require('../test-server.js');
+const server = require('../server-handler.js');
 const request = require('../../dist/pax-request.js');
 request.baseUrl = 'http://localhost:8082';
 

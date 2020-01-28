@@ -6,17 +6,19 @@ import {
 
 let adapter;
 
-export default async function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator, maxContentLength = -1, responseEncoding, jwtHandler }) {
+export default async function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator, credentials = false, maxContentLength = -1, responseEncoding, jwtHandler, authentication = false }) {
   if (!adapter) adapter = await load();
 
-  const config = { baseUrl, url, headers, data, method, urlParameters, timeout, responseType, validateStatus, maxContentLength, responseEncoding };
+  const config = { baseUrl, url, headers, data, method, urlParameters, timeout, responseType, validateStatus, credentials, maxContentLength, responseEncoding };
   transformRequest(config);
 
   // handle jwt
-  if (jwtHandler) config.headers[jwtHandler.accessTokenHeaderName] = await jwtHandler.getAccessTokenHeaderValue();
+  if (jwtHandler && !authentication) config.headers[jwtHandler.accessTokenHeaderName] = await jwtHandler.getAccessTokenHeaderValue();
 
   const response = await adapter.default(config);
   transformResponse(response);
+  
+  if (jwtHandler && authentication) jwtHandler.setAccessToken(response.data.access_token);
 
   return response;
 }

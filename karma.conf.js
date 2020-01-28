@@ -16,10 +16,14 @@ module.exports = function(config) {
 
     client: {
       childProcess: {
-        path: 'test/test-server.js',
+        path: 'test/server-handler.js',
         args: [],
         options: {}
       }
+    },
+
+    preprocessors: {
+      '**/*.js': ['sourcemap']
     }
   })
 }

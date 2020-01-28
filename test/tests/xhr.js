@@ -45,7 +45,7 @@ describe('browser', () => {
 
     it('params-to-json', async () => {
       const data = { test: 'one' };
-      const response = await request
+      const response = await paxRequest
         .post('params-to-json')
         .urlParameters(data)
         .send();
@@ -70,13 +70,18 @@ describe('browser', () => {
     });
   });
 
-  describe.only('jwt', () => {
+  describe('jwt', () => {
     let instance;
 
     before(() => {
       instance = paxRequest.createInstance({
         baseUrl: 'http://localhost:8082',
-        jwt: true
+        jwt: {
+          baseUrl: 'http://localhost:8083',
+          authenticatePath: 'authenticate',
+          deauthenticatePath: 'logout',
+          refershPath: 'token'
+        }
       });
     });
 
@@ -94,36 +99,56 @@ describe('browser', () => {
       assert.fail('no timeout');
     });
 
-    // TODO gerenate jwt
-    it('get access with refresh', async () => {
-      localStorage.setItem('pax-jwt-refresh-token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
-      const response = await instance
-        .get('auth')
+    it('intance should no longer be authed', async () => {
+      const isAuthorized = await instance.authorizeJWT();
+      assert.equal(isAuthorized, false)
+    });
+
+    it('should login', async () => {
+      await instance
+        .authenticateJWT()
+        .data({
+          email: 'my@email.com',
+          password: 'password'
+        })
         .send();
     });
 
-    it('get new access with expired access', async function() {
+    it('should validate access token', async () => {
+      await instance
+        .get('check-access-token')
+        .send();
+    });
+
+    it('should refresh access token on experation', async function() {
       this.timeout(5000);
-      const currentAccess = localStorage.getItem('pax-jwt-access-token');
+      const oldToken = localStorage.getItem('pax-jwt-access-token');
 
       await (new Promise(resolve => {
         setTimeout(() => { resolve(); }, 2000);
       }));
 
       const response = await instance
-        .get('auth')
+        .get('check-access-token')
         .send();
 
       const newAccess = localStorage.getItem('pax-jwt-access-token');
-      assert.isDefined(currentAccess);
+      assert.isDefined(oldToken);
       assert.isDefined(newAccess);
-      assert.notEqual(currentAccess, newAccess);
+      assert.notEqual(oldToken, newAccess);
     });
 
+    it('intance should be authed', async () => {
+      const isAuthorized = await instance.authorizeJWT();
+      assert.equal(isAuthorized, true)
+    });
 
-    it('clear token on unauth', async () => {
+    it('401 after logout', async () => {
+      await instance
+        .deauthenticateJWT()
+        .send();
+
       try {
-        instance.unauth();
         await instance
           .get('auth')
           .send();
@@ -133,7 +158,7 @@ describe('browser', () => {
         return;
       }
 
-      assert.fail('has token');
+      assert.fail('did not logout');
     });
   });
 });

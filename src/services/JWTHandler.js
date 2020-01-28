@@ -1,41 +1,25 @@
 const jwtRegex = /^[a-zA-Z0-9\-_]+?\.[a-zA-Z0-9\-_]+?\.([a-zA-Z0-9\-_]+)?$/;
 
 export default class JWTHandler {
-  constructor({ jwtConfig = {}, baseUrl, adapter }) {
-    if (jwtConfig === true) jwtConfig = {};
-
-    this._baseUrl = baseUrl;
+  constructor({ baseUrl, authenticatePath = 'authenticate', deauthenticatePath = 'logout', refreshPath = 'token' }, adapter ) {
     this._adapter = adapter;
+    this._config = { baseUrl, authenticatePath, deauthenticatePath, refreshPath };
 
-    this._refreshBaseUrl = jwtConfig.refreshBaseUrl || baseUrl;
-    this._refreshUrl = jwtConfig.refreshUrl || 'token';
-    this._accessTokenHeaderName = jwtConfig.acessTokenHeaderName || 'Authorization';
-    this._acessTokenHeaderPrefix = jwtConfig.acessTokenHeaderPrefix || 'Bearer ';
-    this._accessTokenStorageName = jwtConfig.accessTokenStorageName || 'pax-jwt-access-token';
-    this._refreshTokenStorageName = jwtConfig.refreshTokenStorageName || 'pax-jwt-refresh-token';
+    this.accessTokenHeaderName = 'Authorization';
+    this.acessTokenHeaderPrefix = 'Bearer ';
+    this.accessTokenStorageName = 'pax-jwt-access-token';
   }
 
-
-  get accessTokenHeaderName() {
-    return this._accessTokenHeaderName;
+  get baseUrl() {
+    return this._config.baseUrl;
   }
 
-  get accessTokenStorageName() {
-    return this._accessTokenStorageName;
+  get authenticatePath() {
+    return this._config.authenticatePath;
   }
 
-  get refreshTokenStorageName() {
-    return this._refreshTokenStorageName;
-  }
-
-
-  // refresh token
-  _getRawRefreshToken() {
-    return localStorage.getItem(this.refreshTokenStorageName) || '';
-  }
-
-  setRefreshToken(value) {
-    return localStorage.setItem(this.refreshTokenStorageName, value);
+  get deauthenticatePath() {
+    return this._config.deauthenticatePath;
   }
 
   // access token
@@ -43,41 +27,37 @@ export default class JWTHandler {
     return this._accessToken || localStorage.getItem(this.accessTokenStorageName) || '';
   }
 
-  async getAccessToken() {
-    if (this.isExpired(this._getRawAccessToken())) await this.refreshAccessToken();
-    return this._getRawAccessToken();
-  }
-
   setAccessToken(value) {
     this._accessToken = value;
     localStorage.setItem(this.accessTokenStorageName, value);
   }
 
-  async getAccessTokenHeaderValue() {
-    const token = await this.getAccessToken();
-    return `${this._acessTokenHeaderPrefix}${token}`;
+  async getAccessToken() {
+    const rawAccess = this._getRawAccessToken();
+    if (!this.isValid(rawAccess) || this.isExpired(rawAccess)) await this.refreshAccessToken();
+    return this._getRawAccessToken();
   }
 
+  async getAccessTokenHeaderValue() {
+    const token = await this.getAccessToken();
+    return `${this.acessTokenHeaderPrefix}${token}`;
+  }
 
   async refreshAccessToken() {
     const response = await this._adapter({
-      baseUrl: this._refreshBaseUrl,
-      url: this._refreshUrl,
+      baseUrl: this._config.baseUrl,
+      url: this._config.refreshPath,
       method: 'POST',
-      headers: {
-        [this._accessTokenHeaderName]: `Bearer ${this._getRawAccessToken()}`
-      },
+      credentials: true,
       data: {
-        grant_type: 'refresh_token',
-        refresh_token: this._getRawRefreshToken()
+        grant_type: 'refresh_token'
       }
     });
 
-    if (!typeof response.data === 'object' || !response.data.access_token || !this.isValid(response.data.access_token)) throw this.authError('401 unarthorized - invalid token');
+    if (!typeof response.data === 'object' || !response.data.access_token || !this.isValid(response.data.access_token)) throw this.authError('401 unarthorized - invalid token', response);
 
     this.setAccessToken(response.data.access_token);
   }
-
 
   isValid(token) {
     return jwtRegex.test(token);
@@ -85,12 +65,9 @@ export default class JWTHandler {
 
   isExpired(token) {
     const parsed = this.decodeToken(token);
-
-    // no experation
-    if (!parsed.exp) return true;
-
     // expired
-    if (Date.now() > parsed.exp) return true;
+    // jwt exp is in secconds
+    if (parsed.exp && Math.floor((Date.now() / 1000)) > parsed.exp) return true;
 
     return false;
   }
@@ -107,15 +84,23 @@ export default class JWTHandler {
     return JSON.parse(jsonPayload);
   }
 
-  authError(message) {
-    const error = new Error(message);
-    error.status = '401';
-    error.response = { status: 401 };
-    return error;
+  // Verify refresh token and get an access token. This is meant to be used to acknowledge the need to authorization
+  async authorizeJWT() {
+    try {
+      await this.refreshAccessToken();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
-  unauth() {
+  unAuthorize() {
     this.setAccessToken('');
-    this.setRefreshToken('');
+  }
+
+  authError(message, response) {
+    const error = new Error(message);
+    error.response = response;
+    return error;
   }
 }

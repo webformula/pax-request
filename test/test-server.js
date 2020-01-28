@@ -17,7 +17,10 @@ module.exports = new Promise((resolve) => {;
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.options('*', cors());
 
 
@@ -66,27 +69,9 @@ app.get('/timeout', (req, res) => {
 
 
 // ---- JWT ----
-// return back json recieved
-app.get('/auth', (req, res) => {
+app.get('/check-access-token', (req, res) => {
   jwt.verify(req.headers.authorization.replace('Bearer ', ''), privateKey, (err, decoded) => {
     if (err) return res.status(401).send();
     res.send();
-  });
-});
-
-app.post('/token', (req, res) => {
-  const { body: { grant_type, refresh_token } } = req;
-  if (grant_type !== 'refresh_token') return res.status(401).send();
-  // we assume the token is valid for this request
-  if (!refresh_token) return res.status(401).send();
-
-  // TODO gerenate jwt
-  res.send({
-    token_type: 'Bearer',
-    access_token: jwt.sign({
-      foo: 'bar',
-    }, privateKey, {
-      expiresIn: '1s'
-    })
   });
 });

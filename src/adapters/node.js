@@ -20,7 +20,7 @@ import {
 
 const httpsRegex = /https:?/;
 
-export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator, maxContentLength = -1, responseEncoding } = {}) {
+export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator, withCredentials = false, maxContentLength = -1, responseEncoding } = {}) {
   const config = arguments[0];
 
   // url

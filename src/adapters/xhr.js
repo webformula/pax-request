@@ -15,7 +15,7 @@ import {
   createError
 } from './utils.js';
 
-export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator } = {}) {
+export default function ({ baseUrl, url, headers = {}, data = null, method = 'GET', urlParameters, timeout = 30, responseType = 'text', validateStatus = defaultStatisValidator, credentials } = {}) {
   const config = arguments[0];
   let request = new XMLHttpRequest();
   request.open(method.toUpperCase(), buildUrl(baseUrl, url, urlParameters));
@@ -28,17 +28,19 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
     request.setRequestHeader(key, value);
   });
 
-  if (config.responseType) {
+  if (responseType) {
     try {
-      request.responseType = config.responseType;
+      request.responseType = responseType;
     } catch (e) {
       // Expected DOMException thrown by browsers not compatible XMLHttpRequest Level 2.
       // But, this can be suppressed for 'json' type as it can be parsed by default 'transformResponse' function.
-      if (config.responseType !== 'json') {
+      if (responseType !== 'json') {
         throw e;
       }
     }
   }
+
+  request.withCredentials = credentials;
 
   return new Promise((resolve, reject) => {
     request.onreadystatechange = () => {
