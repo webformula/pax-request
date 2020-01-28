@@ -8,7 +8,7 @@ class RequestInstance {
   }
 
   createInstance(config) {
-    return new RequestInstance(config);
+    return new RequestInstance(config || this._config);
   }
 
   set baseUrl(value) {
