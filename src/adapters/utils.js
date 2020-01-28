@@ -15,7 +15,7 @@ export function buildUrl(baseUrl = '', requestUrl = '', urlParameters) {
   else url =`${baseUrl.replace(trailingSlashRegex)}/${requestUrl.replace(leadingSlashRegex)}`;
 
   if (urlParameters && typeof urlParameters === 'object') {
-    url += `?${Object.entries(urlParameters).map(([key, value]) => `${key}=${value}`).join('&')}`
+    url += `?${Object.entries(urlParameters).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&')}`
   }
 
   return url;
