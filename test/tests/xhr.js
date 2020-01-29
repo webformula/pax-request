@@ -74,7 +74,7 @@ describe('browser', () => {
     let instance;
 
     before(() => {
-      instance = paxRequest.createInstance({
+      authedInstance = paxRequest.createInstance({
         baseUrl: 'http://localhost:8082',
         jwt: {
           baseUrl: 'http://localhost:8083',
@@ -87,7 +87,7 @@ describe('browser', () => {
 
     it('no token test', async () => {
       try {
-        await instance
+        await authedInstance
           .get('auth')
           .send();
 
@@ -100,12 +100,12 @@ describe('browser', () => {
     });
 
     it('intance should no longer be authed', async () => {
-      const isAuthorized = await instance.authorizeJWT();
+      const isAuthorized = await authedInstance.authorizeJWT();
       assert.equal(isAuthorized, false)
     });
 
     it('should login', async () => {
-      await instance
+      await authedInstance
         .authenticateJWT()
         .data({
           email: 'my@email.com',
@@ -115,7 +115,7 @@ describe('browser', () => {
     });
 
     it('should validate access token', async () => {
-      await instance
+      await authedInstance
         .get('check-access-token')
         .send();
     });
@@ -128,7 +128,7 @@ describe('browser', () => {
         setTimeout(() => { resolve(); }, 2000);
       }));
 
-      const response = await instance
+      const response = await authedInstance
         .get('check-access-token')
         .send();
 
@@ -139,17 +139,17 @@ describe('browser', () => {
     });
 
     it('intance should be authed', async () => {
-      const isAuthorized = await instance.authorizeJWT();
+      const isAuthorized = await authedInstance.authorizeJWT();
       assert.equal(isAuthorized, true)
     });
 
     it('401 after logout', async () => {
-      await instance
+      await authedInstance
         .deauthenticateJWT()
         .send();
 
       try {
-        await instance
+        await authedInstance
           .get('auth')
           .send();
 
