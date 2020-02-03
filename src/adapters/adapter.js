@@ -10,25 +10,39 @@ export default async function ({ baseUrl, url, headers = {}, data = null, method
   if (!adapter) adapter = await load();
 
   const config = { baseUrl, url, headers, data, method, urlParameters, timeout, responseType, validateStatus, credentials, maxContentLength, responseEncoding };
+
+  await addAuthToRequest(jwtHandler, authentication, config);
+
   transformRequest(config);
 
-  // handle jwt
-  if (jwtHandler && !authentication) config.headers[jwtHandler.accessTokenHeaderName] = await jwtHandler.getAccessTokenHeaderValue();
+  let response;
+  try {
+    response = await adapter.default(config);
+  } catch (e) {
+    if (!jwtHandler || !e.response || e.response.status != 401) throw e;
+    // attemp to refresh on 401
+    await jwtHandler.refresh();
+    await addAuthToRequest(jwtHandler, authentication, config);
+    response = await adapter.default(config);
+  }
 
-  const response = await adapter.default(config);
   transformResponse(response);
-  
-  if (jwtHandler && authentication) jwtHandler.setAccessToken(response.data.access_token);
+
+  // set jwt tokens from authentication request
+  if (jwtHandler && authentication) jwtHandler.authenticateFromResponse(response);
 
   return response;
 }
 
 async function load() {
-  // browser
+  // browser fetch
+  // if (typeof fetch !== 'undefined') return await import('./fetch.js');
+
+  // browser xhr
   if (typeof XMLHttpRequest !== 'undefined') return await import('./xhr.js');
 
   // node
-  if (typeof process !== 'undefined' && process.release.name === 'node') return await import('./node.js');
+  if (typeof process !== 'undefined' &&  process.release.name === 'node') return await import('./node.js');
 }
 
 
@@ -43,4 +57,13 @@ function transformResponse(response) {
       response.data = JSON.parse(response.data);
     } catch (e) { }
   }
+}
+
+// add jwt to request
+async function addAuthToRequest(jwtHandler, authentication, config) {
+  if (!jwtHandler || authentication) return;
+
+  const authRequestConfig = await jwtHandler.getAccessTokenForRequest();
+  config.headers = Object.assign(config.headers || {}, authRequestConfig.headers);
+  if (authRequestConfig.data) config.data = Object.assign(config.data || {}, authRequestConfig.data);
 }

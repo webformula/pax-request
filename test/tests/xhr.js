@@ -70,8 +70,8 @@ describe('browser', () => {
     });
   });
 
-  describe('jwt', () => {
-    let instance;
+  describe('jwt refresh config 1', () => {
+    let authedInstance;
 
     before(() => {
       authedInstance = paxRequest.createInstance({
@@ -80,7 +80,38 @@ describe('browser', () => {
           baseUrl: 'http://localhost:8083',
           authenticatePath: 'authenticate',
           deauthenticatePath: 'logout',
-          refershPath: 'token'
+          refreshPath: 'token',
+
+          strategy: 'refresh',
+          storage: {
+            access: 'memory',
+            refresh: 'cookie'
+          },
+
+          recieve: {
+            access: {
+              transferType: 'body',
+              parameterName: 'access_token'
+            },
+
+            refresh: {
+              transferType: 'body',
+              parameterName: 'refresh_token'
+            }
+          },
+
+          send: {
+            access: {
+              transferType: 'header',
+              parameterName: 'Authorization',
+              prefix: 'Bearer '
+            },
+
+            refresh: {
+              transferType: 'body',
+              parameterName: 'refresh_token'
+            }
+          }
         }
       });
     });
@@ -88,11 +119,12 @@ describe('browser', () => {
     it('no token test', async () => {
       try {
         await authedInstance
-          .get('auth')
+          .get('check-access-token')
           .send();
 
       } catch (e) {
         assert.isDefined(e);
+        assert.equal(e.response.status, 401);
         return;
       }
 
@@ -100,8 +132,13 @@ describe('browser', () => {
     });
 
     it('intance should no longer be authed', async () => {
-      const isAuthorized = await authedInstance.authorizeJWT();
-      assert.equal(isAuthorized, false)
+      try {
+        await authedInstance.authorizeJWT();
+        assert.fail('should throw');
+      } catch(e) {
+        assert.isDefined(e);
+        assert.equal(e.response.status, 401);
+      }
     });
 
     it('should login', async () => {
@@ -120,29 +157,6 @@ describe('browser', () => {
         .send();
     });
 
-    it('should refresh access token on experation', async function() {
-      this.timeout(5000);
-      const oldToken = localStorage.getItem('pax-jwt-access-token');
-
-      await (new Promise(resolve => {
-        setTimeout(() => { resolve(); }, 2000);
-      }));
-
-      const response = await authedInstance
-        .get('check-access-token')
-        .send();
-
-      const newAccess = localStorage.getItem('pax-jwt-access-token');
-      assert.isDefined(oldToken);
-      assert.isDefined(newAccess);
-      assert.notEqual(oldToken, newAccess);
-    });
-
-    it('intance should be authed', async () => {
-      const isAuthorized = await authedInstance.authorizeJWT();
-      assert.equal(isAuthorized, true)
-    });
-
     it('401 after logout', async () => {
       await authedInstance
         .deauthenticateJWT()
@@ -155,6 +169,131 @@ describe('browser', () => {
 
       } catch (e) {
         assert.isDefined(e);
+        assert.equal(e.response.status, 401);
+        return;
+      }
+
+      assert.fail('did not logout');
+    });
+  });
+
+
+  describe('jwt refresh config 2', () => {
+    let authedInstance;
+
+    before(() => {
+      authedInstance = paxRequest.createInstance({
+        baseUrl: 'http://localhost:8082',
+        jwt: {
+          baseUrl: 'http://localhost:8083',
+          authenticatePath: 'authenticate-config2',
+          // deauthenticatePath: 'logout',
+          refreshPath: 'token-config2',
+
+          strategy: 'refresh',
+          storage: {
+            access: 'localStorage',
+            refresh: 'localStorage'
+          },
+
+          recieve: {
+            access: {
+              transferType: 'body',
+              parameterName: 'access_token'
+            },
+
+            refresh: {
+              transferType: 'body',
+              parameterName: 'refresh_token'
+            }
+          },
+
+          send: {
+            access: {
+              transferType: 'body',
+              parameterName: 'access_token'
+            },
+
+            refresh: {
+              transferType: 'body',
+              parameterName: 'refresh_token'
+            }
+          }
+        }
+      });
+    });
+
+    it('no token test', async () => {
+      try {
+        await authedInstance
+          .get('check-access-token-body')
+          .send();
+
+      } catch (e) {
+        assert.isDefined(e);
+        assert.equal(e.response.status, 401);
+        return;
+      }
+
+      assert.fail('no timeout');
+    });
+
+    it('intance should no longer be authed', async () => {
+      try {
+        await authedInstance.authorizeJWT();
+        assert.fail('should throw');
+      } catch(e) {
+        assert.isDefined(e);
+        assert.equal(e.response.status, 401);
+      }
+    });
+
+    it('should login', async () => {
+      await authedInstance
+        .authenticateJWT()
+        .data({
+          email: 'my@email.com',
+          password: 'password'
+        })
+        .send();
+    });
+
+    it('should validate access token', async () => {
+      await authedInstance
+        .post('check-access-token-body')
+        .send();
+    });
+
+    it('should refresh access token on experation', async function() {
+      this.timeout(5000);
+      const oldToken = localStorage.getItem('jwt_token_0');
+
+      await (new Promise(resolve => {
+        setTimeout(() => { resolve(); }, 2000);
+      }));
+
+      const response = await authedInstance
+        .post('check-access-token-body')
+        .send();
+
+      const newAccess = localStorage.getItem('jwt_token_0');
+      assert.isDefined(oldToken);
+      assert.isDefined(newAccess);
+      assert.notEqual(oldToken, newAccess);
+    });
+
+    it('401 after logout', async () => {
+      await authedInstance
+        .deauthenticateJWT()
+        .send();
+
+      try {
+        await authedInstance
+          .post('check-access-token-body')
+          .send();
+      } catch (e) {
+        assert.isDefined(e);
+        assert.equal(e.response.status, 401);
         return;
       }
 

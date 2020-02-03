@@ -110,7 +110,7 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
 
       request = undefined;
     };
-
+    
     request.send(data);
   });
 }

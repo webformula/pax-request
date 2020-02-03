@@ -1,14 +1,21 @@
 import adapter from './adapters/adapter.js';
 import JWTHandler from './services/JWTHandler.js';
+import {
+  defaultStorage,
+  sendDefault,
+  recieveDefault
+} from './services/JWTHandler.js'
 
 class RequestInstance {
   constructor(config = {}) {
     this._config = config;
-    if (this._config.jwt) this._config.jwtHandler = new JWTHandler(this._config.jwt, adapter);
+    if (!this._config.jwtHandler && this._config.jwt && this._config.jwt.enabled !== false) this._config.jwtHandler = new JWTHandler(adapter, this._config.jwt);
   }
 
-  createInstance(config) {
-    return new RequestInstance(config || this._config);
+  createInstance({ baseUrl, headers = {}, jwt = { enabled: false, baseUrl, authenticatePath: 'authenticate', deauthenticatePath: 'logout', refreshPath: 'token', strategy: 'refresh', storage: defaultStorage, send: sendDefault, recieve: recieveDefault } }) {
+    const headersCombined = Object.assign({}, this._config.headers, headers);
+    const config = Object.assign({}, this._config, { baseUrl, headers: headersCombined, jwt });
+    return new RequestInstance(config);
   }
 
   set baseUrl(value) {
@@ -81,6 +88,14 @@ class RequestInstance {
   // used to authenticate user and provide a refresh token and access token
   deauthenticateJWT() {
     if (!this._config.jwtHandler) throw Error('JWT is not configured');
+
+    // clear local tokens
+    this._config.jwtHandler.deauthenticate();
+
+    // shortcut a new instance
+    if (!this._config.jwtHandler.deauthenticatePath) return { send() {} };
+
+    // prep a deauth call
     const instance = this._instancer(this._config.jwtHandler.deauthenticatePath, 'POST');
     instance.baseUrl = this._config.jwtHandler.baseUrl;
     instance._config.credentials = true;
@@ -120,7 +135,7 @@ class RequestInstance {
 
   async authorizeJWT() {
     if (!this._config.jwtHandler) throw Error('no jwt configured');
-    return this._config.jwtHandler.authorizeJWT();
+    return this._config.jwtHandler.authorize();
   }
 
   unAuthorizeJWT() {

@@ -29,32 +29,33 @@ app.options('*', cors());
 app.post('/token', (req, res) => {
   const { body: { grant_type } } = req;
   if (grant_type !== 'refresh_token') return res.status(401).send();
-  // we assume the token is valid for this request
-  const token = req.cookies && req.cookies.refresh_token;
-  if (!token) return res.status(401).send();
 
-  // TODO gerenate jwt
-  res.send({
-    token_type: 'Bearer',
-    access_token: jwt.sign({
-      foo: 'bar',
-    }, privateKey, {
-      expiresIn: '1m'
-    })
+  const token = req.cookies && req.cookies.refresh_token;
+  jwt.verify((token || '').replace('Bearer ', ''), privateKey, (err, decoded) => {
+    if (err) return res.status(401).send();
+
+    res.send({
+      token_type: 'Bearer',
+      access_token: jwt.sign({
+        foo: 'access 1',
+      }, privateKey, {
+        expiresIn: '1m'
+      })
+    });
   });
 });
 
 app.post('/authenticate', (req, res) => {
   const refreshToken = jwt.sign({
-    foo: 'bar',
+    foo: 'refresh 1',
   }, privateKey, {
     expiresIn: '1h'
   });
 
   const accessToken = jwt.sign({
-    foo: 'bar2',
+    foo: 'access 1-2',
   }, privateKey, {
-    expiresIn: '1s'
+    expiresIn: '3s'
   });
 
   res.cookie('refresh_token', refreshToken, { httpOnly: true, maxAge: 1 * 60 * 60 * 1000 });
@@ -65,4 +66,38 @@ app.post('/authenticate', (req, res) => {
 app.post('/logout', (req, res) => {
   res.clearCookie('refresh_token');
   res.end();
+});
+
+
+
+app.post('/token-config2', (req, res) => {
+  const { body: { refresh_token } } = req;
+
+  jwt.verify((refresh_token || '').replace('Bearer ', ''), privateKey, (err, decoded) => {
+    if (err) return res.status(401).send();
+
+    const access_token = jwt.sign({
+      foo: 'access 2-1',
+    }, privateKey, {
+      expiresIn: '1m'
+    });
+
+    res.send({ access_token });
+  });
+});
+
+app.post('/authenticate-config2', (req, res) => {
+  const refresh_token = jwt.sign({
+    foo: 'refresh 2',
+  }, privateKey, {
+    expiresIn: '2m'
+  });
+
+  const access_token = jwt.sign({
+    foo: 'access 2',
+  }, privateKey, {
+    expiresIn: '1s'
+  });
+
+  res.send({ access_token, refresh_token });
 });

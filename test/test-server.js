@@ -70,7 +70,14 @@ app.get('/timeout', (req, res) => {
 
 // ---- JWT ----
 app.get('/check-access-token', (req, res) => {
-  jwt.verify(req.headers.authorization.replace('Bearer ', ''), privateKey, (err, decoded) => {
+  jwt.verify((req.headers.authorization || '').replace('Bearer ', ''), privateKey, (err, decoded) => {
+    if (err) return res.status(401).send();
+    res.send();
+  });
+});
+
+app.post('/check-access-token-body', (req, res) => {
+  jwt.verify((req.body.access_token || ''), privateKey, (err, decoded) => {
     if (err) return res.status(401).send();
     res.send();
   });
