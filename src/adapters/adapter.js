@@ -11,8 +11,10 @@ export default async function ({ baseUrl, url, headers = {}, data = null, method
 
   const config = { baseUrl, url, headers, data, method, urlParameters, timeout, responseType, validateStatus, credentials, maxContentLength, responseEncoding };
 
+  // prep auth
   await addAuthToRequest(jwtHandler, authentication, config);
 
+  // prepare request
   transformRequest(config);
 
   let response;
@@ -20,12 +22,14 @@ export default async function ({ baseUrl, url, headers = {}, data = null, method
     response = await adapter.default(config);
   } catch (e) {
     if (!jwtHandler || !e.response || e.response.status != 401) throw e;
+
     // attemp to refresh on 401
     await jwtHandler.refresh();
     await addAuthToRequest(jwtHandler, authentication, config);
     response = await adapter.default(config);
   }
 
+  // prepare response
   transformResponse(response);
 
   // set jwt tokens from authentication request

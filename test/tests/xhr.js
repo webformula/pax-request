@@ -300,4 +300,22 @@ describe('browser', () => {
       assert.fail('did not logout');
     });
   });
+
+
+  describe.only('health check', () => {
+    let healthInstance;
+
+    before(() => {
+      healthInstance = paxRequest.createInstance({
+        baseUrl: 'http://localhost:8082',
+        health: true
+      });
+    });
+
+    // it('bacic-get', async () => {
+    //   const response = await healthInstance.get('base-get').send();
+    //   console.log(healthInstance.getReport('base-get'));
+    //   assert.equal(response.status, 200);
+    // });
+  });
 });

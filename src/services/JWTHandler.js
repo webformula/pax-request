@@ -33,6 +33,19 @@ export const recieveDefault = {
   }
 };
 
+export const jwtDefaultConfig = {
+  enabled: false,
+  baseUrl: undefined,
+  authenticatePath: 'authenticate',
+  deauthenticatePath: 'logout',
+  refreshPath: 'token',
+  strategy: 'refresh',
+  storage: defaultStorage,
+  send: sendDefault,
+  recieve: recieveDefault
+};
+
+
 export default class JWTHandler {
   static get strategyTypes() {
     return ['refresh', 'acessOnly'];

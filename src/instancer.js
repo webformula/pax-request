@@ -1,10 +1,8 @@
 import adapter from './adapters/adapter.js';
-import JWTHandler from './services/JWTHandler.js';
-import {
-  defaultStorage,
-  sendDefault,
-  recieveDefault
-} from './services/JWTHandler.js'
+import JWTHandler, { jwtDefaultConfig } from './services/JWTHandler.js';
+
+let counter = 0;
+
 
 class RequestInstance {
   constructor(config = {}) {
@@ -12,7 +10,7 @@ class RequestInstance {
     if (!this._config.jwtHandler && this._config.jwt && this._config.jwt.enabled !== false) this._config.jwtHandler = new JWTHandler(adapter, this._config.jwt);
   }
 
-  createInstance({ baseUrl, headers = {}, jwt = { enabled: false, baseUrl, authenticatePath: 'authenticate', deauthenticatePath: 'logout', refreshPath: 'token', strategy: 'refresh', storage: defaultStorage, send: sendDefault, recieve: recieveDefault } }) {
+  createInstance({ baseUrl, headers = {}, jwt = jwtDefaultConfig }) {
     const headersCombined = Object.assign({}, this._config.headers, headers);
     const config = Object.assign({}, this._config, { baseUrl, headers: headersCombined, jwt });
     return new RequestInstance(config);
@@ -49,6 +47,7 @@ class RequestInstance {
   get timeout() {
     return this._config.timeout || 30;
   }
+  
 
   // method functions return new instances of the
   get(url) {
@@ -130,6 +129,11 @@ class RequestInstance {
 
   credentials(value = true) {
     this._config.credentials = value;
+    return this;
+  }
+
+  health(value = true) {
+    this._config.health = value;
     return this;
   }
 
