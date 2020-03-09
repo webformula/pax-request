@@ -74,6 +74,12 @@ class RequestInstance {
     return this._instancer(url, 'HEAD');
   }
 
+
+  setAccessToken(token) {
+    if (!this._config.jwtHandler) throw Error('JWT is not configured');
+    this._config.jwtHandler.setAccessToken(token);
+  }
+
   // used to authenticate user and provide a refresh token and access token
   authenticateJWT() {
     if (!this._config.jwtHandler) throw Error('JWT is not configured');

@@ -36,13 +36,14 @@ export const recieveDefault = {
 export const jwtDefaultConfig = {
   enabled: false,
   baseUrl: undefined,
-  authenticatePath: 'authenticate',
-  deauthenticatePath: 'logout',
-  refreshPath: 'token',
+  authenticatePath: '',
+  deauthenticatePath: '',
+  refreshPath: '',
   strategy: 'refresh',
   storage: defaultStorage,
   send: sendDefault,
-  recieve: recieveDefault
+  recieve: recieveDefault,
+  waitForInitialToken: false
 };
 
 
@@ -59,7 +60,7 @@ export default class JWTHandler {
     return ['cookie', 'header', 'body'];
   }
 
-  constructor(adapter, { baseUrl, authenticatePath = 'authenticate', deauthenticatePath = 'logout', refreshPath = 'token', strategy = 'refresh', storage = defaultStorage, send = sendDefault, recieve = recieveDefault }) {
+  constructor(adapter, { baseUrl, authenticatePath = '', deauthenticatePath = '', refreshPath = '', strategy = 'refresh', storage = defaultStorage, send = sendDefault, recieve = recieveDefault, waitForInitialToken = false }) {
     this._adapter = adapter;
     this.baseUrl = baseUrl;
     this.authenticatePath = authenticatePath;
@@ -68,7 +69,9 @@ export default class JWTHandler {
     this.strategy = strategy;
     this.recieveConfig = recieve;
     this.sendConfig = send;
+    this.waitForInitialToken = waitForInitialToken;
     this.jwtRegex = /^[a-zA-Z0-9\-_]+?\.[a-zA-Z0-9\-_]+?\.([a-zA-Z0-9\-_]+)?$/;
+    this.waitForAuthSeconds = 15000;
 
     switch(storage.access) {
       case 'memory':
@@ -95,7 +98,31 @@ export default class JWTHandler {
     }
   }
 
+  async waitForAccessTokenToBeSet() {
+    if (!this.waitForInitialToken || this.accessTokenSet) return;
+
+    return new Promise((resolve, reject) => {
+      let totalTime = 0;
+      const interval = setInterval(() => {
+        if (this.accessTokenSet) {
+          resolve();
+          clearInterval(interval);
+          return;
+        }
+
+        totalTime += 100;
+        
+        // prevent an infinte loop
+        if (totalTime > this.waitForAuthSeconds) {
+          reject(`waited longer than ${this.waitForAuthSeconds} seconds for token to be set.`);
+          clearInterval(interval);
+        }
+      }, 100);
+    });
+  }
+
   async getAccessTokenForRequest() {
+    await this.waitForAccessTokenToBeSet();
     await this.authorize();
 
     let data;
@@ -163,6 +190,8 @@ export default class JWTHandler {
   }
 
   setRefreshFromResponse(response) {
+    if (!this.recieveConfig || !this.recieveConfig.refresh) return;
+
     switch (this.recieveConfig.refresh.transferType) {
       case 'header':
         this.refreshTokenHandler.token = response.headers[this.recieveConfig.refresh.parameterName];
@@ -171,6 +200,18 @@ export default class JWTHandler {
         this.refreshTokenHandler.token = response.data[this.recieveConfig.refresh.parameterName];
         break;
     }
+  }
+
+  setAccessToken(token) {
+    switch (this.recieveConfig.access.transferType) {
+      case 'header':
+        this.accessTokenHandler.token = token;
+        break;
+      case 'body':
+        this.accessTokenHandler.token = token
+        break;
+    }
+    this.accessTokenSet = true;
   }
 
   setAcessFromResponse(response) {
@@ -182,6 +223,7 @@ export default class JWTHandler {
         this.accessTokenHandler.token = response.data[this.recieveConfig.access.parameterName];
         break;
     }
+    this.accessTokenSet = true;
   }
 
   isValid(token) {

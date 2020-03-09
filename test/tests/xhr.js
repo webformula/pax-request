@@ -300,4 +300,94 @@ describe('browser', () => {
       assert.fail('did not logout');
     });
   });
+
+
+  // test manually injected token
+  describe('jwt refresh config 2', () => {
+    let authedInstance;
+    let getTokenInstance;
+
+    before(() => {
+      getTokenInstance = paxRequest.createInstance({
+        baseUrl: 'http://localhost:8082',
+        jwt: {
+          baseUrl: 'http://localhost:8083',
+          authenticatePath: 'authenticate-config2',
+          strategy: 'acessOnly',
+          storage: {
+            access: 'localStorage'
+          },
+          
+          recieve: {
+            access: {
+              transferType: 'body',
+              parameterName: 'access_token'
+            }
+          },
+
+          send: {
+            access: {
+              transferType: 'body',
+              parameterName: 'access_token'
+            },
+          }
+        }
+      });
+
+      authedInstance = paxRequest.createInstance({
+        baseUrl: 'http://localhost:8082',
+        jwt: {
+          waitForInitialToken: true,
+          strategy: 'acessOnly',
+          storage: {
+            access: 'localStorage'
+          },
+
+          send: {
+            access: {
+              transferType: 'body',
+              parameterName: 'access_token'
+            }
+          }
+        }
+      });
+    });
+
+    it('should wait for token to send requests', async () => {
+        setTimeout(() => {
+          getTokenInstance
+            .authenticateJWT()
+            .data({
+              email: 'my@email.com',
+              password: 'password'
+            })
+            .send()
+            .then(({ data }) => {
+              authedInstance.setAccessToken(data.access_token);
+            });
+        }, 200);
+        
+        await authedInstance
+          .post('check-access-token-body')
+          .send();
+    });
+
+    it('401 after logout', async () => {
+      await authedInstance
+        .deauthenticateJWT()
+        .send();
+
+      try {
+        await authedInstance
+          .post('check-access-token-body')
+          .send();
+      } catch (e) {
+        assert.isDefined(e);
+        assert.equal(e.response.status, 401);
+        return;
+      }
+
+      assert.fail('did not logout');
+    });
+  });
 });
