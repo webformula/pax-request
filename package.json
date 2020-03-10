@@ -1,6 +1,6 @@
 {
   "name": "pax-request",
-  "version": "0.0.0",
+  "version": "0.1.1",
   "description": "A node and browser compatible http requester, with jwt and health monitoring builtin",
   "main": "index.js",
   "scripts": {
