@@ -143,6 +143,11 @@ class RequestInstance {
     return this;
   }
 
+  validateAccessToken() {
+    if (!this._config.jwtHandler) throw Error('no jwt configured');
+    return this._config.jwtHandler.validateAccessToken();
+  }
+
   async authorizeJWT() {
     if (!this._config.jwtHandler) throw Error('no jwt configured');
     return this._config.jwtHandler.authorize();

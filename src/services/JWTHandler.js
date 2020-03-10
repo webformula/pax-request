@@ -122,7 +122,7 @@ export default class JWTHandler {
   }
 
   async getAccessTokenForRequest() {
-    await this.waitForAccessTokenToBeSet();
+    // await this.waitForAccessTokenToBeSet();
     await this.authorize();
 
     let data;
@@ -139,6 +139,17 @@ export default class JWTHandler {
     }
 
     return { data, headers };
+  }
+
+  validateAccessToken() {
+    if (this.recieveConfig.access.transferType === 'cookie') {
+      // check if cookie is httpOnly and then look for expiresIn data and check that
+      // TODO configure expiresInCheck
+      return;
+    }
+
+    if (this.isValid(this.accessTokenHandler.token)) return;
+    if (this.strategy !== 'refresh') throw this.Error('401 Unauthorized', { status: 401 });
   }
 
   async authorize() {
