@@ -37,8 +37,7 @@ export function parseRawHeaders(headersString) {
   return headerMap;
 }
 
-export function createError({ config, request, response, code, message }) {
-  let message = message || 'Endpoint error: ';
+export function createError({ config, request, response, code, message = 'Endpoint error: ' }) {
   try {
     const parsed = JSON.parse(response.data);
     if (parsed.error) message += parsed.error.message ? parsed.error.message : parsed.error;
