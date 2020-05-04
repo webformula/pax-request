@@ -69,11 +69,13 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
       };
 
       if (validateStatus(request.status)) resolve(response);
-      else reject(createError(`Request failed with status code ${response.status}`, {
-        config,
-        request,
-        response
-      }));
+      else {
+        throw createError({
+          config,
+          request,
+          response
+        });
+      }
 
       request = undefined;
     };
@@ -81,10 +83,11 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
     request.onabort = () => {
       if (!request) return;
 
-      reject(createError('Request aborted', {
+      reject(createError({
         config,
         request,
-        code: 'ECONNABORTED'
+        code: 'ECONNABORTED',
+        message: 'Request aborted'
       }));
 
       request = undefined;
@@ -93,19 +96,21 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
     request.onerror = () => {
       // Real errors are hidden from us by the browser
       // onerror should only fire if it's a network error
-      reject(createError('Network Error', {
+      reject(createError({
         config,
-        request
+        request,
+        message: 'Network Error'
       }));
 
       request = undefined;
     };
 
     request.ontimeout = () => {
-      reject(createError(`timeout of ${timeout} seconds exceeded`, {
+      reject(createError({
         config,
         code: 'ECONNABORTED',
-        request
+        request,
+        message: `timeout of ${timeout} seconds exceeded`
       }));
 
       request = undefined;

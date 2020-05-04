@@ -73,7 +73,7 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
       if (config.responseType === 'stream') {
         response.data = stream;
         if (validateStatus(res.statusCode)) resolve(response);
-        else reject(createError(`Request failed with status code ${res.statusCode}`, {
+        else reject(createError({
           config,
           request,
           response
@@ -86,9 +86,10 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
           // make sure the content length is not over the maxContentLength if specified
           if (maxContentLength > -1 && Buffer.concat(responseBuffer).length > maxContentLength) {
             stream.destroy();
-            reject(createError(`maxContentLength size of ${maxContentLength} exceeded`, {
+            reject(createError({
               config,
-              request
+              request,
+              message: `maxContentLength size of ${maxContentLength} exceeded`
             }));
           }
         });
@@ -106,7 +107,7 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
           response.data = responseData;
 
           if (validateStatus(res.statusCode)) resolve(response);
-          else reject(createError(`Request failed with status code ${res.statusCode}`, {
+          else reject(createError({
             config,
             request,
             response
@@ -124,10 +125,11 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
       // ClientRequest.setTimeout will be fired on the specify milliseconds, and can make sure that abort() will be fired after connect.
       request.setTimeout(timeout * 1000, () => { // convert to ms
         request.abort();
-        reject(createError(`timeout of ${timeout} seconds exceeded`, {
+        reject(createError({
           config,
           code: 'ECONNABORTED',
-          request
+          request,
+          message: `timeout of ${timeout} seconds exceeded`
         }));
       });
     }
