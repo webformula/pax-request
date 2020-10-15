@@ -70,11 +70,11 @@ export default function ({ baseUrl, url, headers = {}, data = null, method = 'GE
 
       if (validateStatus(request.status)) resolve(response);
       else {
-        throw createError({
+        reject(createError({
           config,
           request,
           response
-        });
+        }));
       }
 
       request = undefined;

@@ -3,6 +3,7 @@
   "version": "0.1.1",
   "description": "A node and browser compatible http requester, with jwt and health monitoring builtin",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "test-browser": "npm run build && karma start --single-run --browsers ChromeHeadless karma.conf.js",
